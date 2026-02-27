@@ -30,7 +30,6 @@
             color: var(--pure-black) !important;
         }
 
-        /* Seek Bar Styling */
         input[type="range"] {
             -webkit-appearance: none;
             width: 100%;
@@ -104,12 +103,25 @@
             border-bottom: 2px double var(--primary-green);
         }
 
-        /* تنسيق خاص لمدخلات الوقت */
         .time-input {
             background: rgba(255,255,255,0.4) !important;
             border: 1px solid rgba(0,0,0,0.1);
             color: black !important;
             font-weight: 800;
+        }
+
+        .speed-btn {
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 800;
+            background: rgba(0,0,0,0.05);
+            transition: 0.2s;
+        }
+
+        .speed-btn.active {
+            background: black;
+            color: white;
         }
 
         @media (max-width: 768px) {
@@ -128,7 +140,6 @@
                 </div>
                 <span class="text-lg md:text-xl font-black">نور القرآن</span>
             </div>
-            <!-- تم حذف عبارة المصحف الصوتي المطور من هنا -->
         </div>
     </nav>
 
@@ -161,19 +172,28 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-6 w-full md:w-1/3 justify-center">
-                    <button onclick="navigateSurah('prev')" class="nav-btn">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-                    </button>
-                    
-                    <button id="mainPlayBtn" onclick="togglePlay()" class="w-16 h-16 bg-black text-white rounded-full flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all">
-                        <svg id="playIcon" class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                        <svg id="pauseIcon" class="w-8 h-8 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                    </button>
+                <div class="flex flex-col items-center gap-2 w-full md:w-1/3 justify-center">
+                    <div class="flex items-center gap-6">
+                        <button onclick="navigateSurah('prev')" class="nav-btn">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                        </button>
+                        
+                        <button id="mainPlayBtn" onclick="togglePlay()" class="w-16 h-16 bg-black text-white rounded-full flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all">
+                            <svg id="playIcon" class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            <svg id="pauseIcon" class="w-8 h-8 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                        </button>
 
-                    <button onclick="navigateSurah('next')" class="nav-btn">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-                    </button>
+                        <button onclick="navigateSurah('next')" class="nav-btn">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                        </button>
+                    </div>
+                    <!-- أزرار التحكم في السرعة -->
+                    <div class="flex gap-2 mt-1">
+                        <button onclick="setSpeed(1, this)" class="speed-btn active">1x</button>
+                        <button onclick="setSpeed(1.25, this)" class="speed-btn">1.25x</button>
+                        <button onclick="setSpeed(1.5, this)" class="speed-btn">1.5x</button>
+                        <button onclick="setSpeed(2, this)" class="speed-btn">2x</button>
+                    </div>
                 </div>
 
                 <div class="flex gap-2 w-full md:w-1/3 justify-center md:justify-end">
@@ -192,7 +212,6 @@
                 </div>
             </div>
 
-            <!-- قسم القص المحدث بالتسميات -->
             <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center pt-2 border-t border-black/5">
                 <div class="md:col-span-8 ui-box p-3 flex flex-wrap items-center justify-center md:justify-start gap-4 text-[11px]">
                     
@@ -235,7 +254,6 @@
 
     <audio id="audioElement" class="hidden"></audio>
 
-    <!-- النوافذ المنبثقة -->
     <div id="surahModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm text-right">
         <div class="bg-white w-full max-w-4xl h-[75vh] rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden">
             <div class="p-6 border-b flex justify-between items-center bg-gray-50">
@@ -271,6 +289,7 @@
         let activeIdx = null; 
         let availableSurahs = [];
         let currentMoshaf = null;
+        let currentPlaybackRate = 1;
 
         const audio = document.getElementById('audioElement');
         const seekBar = document.getElementById('seekBar');
@@ -325,6 +344,7 @@
             document.getElementById('pReciterName').innerText = activeReciter.name;
             document.getElementById('pSurahNum').innerText = idx + 1;
             
+            audio.playbackRate = currentPlaybackRate;
             audio.play();
             updatePlayUI(true);
             document.getElementById('floatingPlayer').classList.remove('hidden', 'minimized');
@@ -341,6 +361,13 @@
                 audio.pause();
                 updatePlayUI(false);
             }
+        }
+
+        function setSpeed(rate, btn) {
+            currentPlaybackRate = rate;
+            audio.playbackRate = rate;
+            document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
         }
 
         function updatePlayUI(isPlaying) {
