@@ -1,360 +1,263 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html dir='rtl' lang='ar'>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نور القرآن - المشغل الذكي</title>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>المصحف الإلكتروني</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary-green: #10b981;
-            --soft-gray: #f8fafc;
-        }
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
-        /* تحسينات للوضع الليلي */
+    <style>
+        :root { --primary-green: #10b981; --soft-gray: #f8fafc; }
         @media (prefers-color-scheme: dark) {
             body { background-color: #0f172a; color: #f1f5f9; }
             .bg-white { background-color: #1e293b !important; color: #f1f5f9; }
-            .text-emerald-950 { color: #ecfdf5 !important; }
-            #floatingPlayer { background-color: rgba(30, 41, 59, 0.95) !important; border-top-color: rgba(16, 185, 129, 0.2); }
+            #floatingPlayer, #contactModal .bg-white { background-color: rgba(30, 41, 59, 0.95) !important; border-top-color: rgba(16, 185, 129, 0.2); }
             .nav-control-btn { color: #f1f5f9 !important; }
-            .skip-control-btn { background: rgba(255,255,255,0.05) !important; color: #f1f5f9; }
             .speed-btn { background: rgba(255,255,255,0.05); color: #f1f5f9; }
-            .time-input { background: rgba(15, 23, 42, 0.8) !important; color: white; border-color: rgba(255,255,255,0.1); }
+            .time-input, .contact-input { background: rgba(15, 23, 42, 0.8) !important; color: white; border-color: rgba(255,255,255,0.1); }
             #searchInput, #surahSearchInput { background-color: #0f172a !important; border-color: #334155; color: white; }
-            .border-gray-100 { border-color: #334155 !important; }
             .cut-zone { background: rgba(0,0,0,0.2) !important; }
         }
-
-        body { 
-            font-family: 'Tajawal', sans-serif; 
-            background-color: var(--soft-gray);
-            overflow-x: hidden;
-        }
-
+        body { font-family: 'Tajawal', sans-serif; background-color: var(--soft-gray); overflow-x: hidden; margin: 0; padding: 0; }
         .quran-font { font-family: 'Amiri', serif; }
-
-        .ui-box { 
-            background-color: var(--primary-green) !important; 
-            border-radius: 1.2rem;
-            color: #000000 !important;
-        }
-
-        input[type="range"] {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 6px;
-            background: rgba(16, 185, 129, 0.2);
-            border-radius: 10px;
-            outline: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
-            background: #000;
-            border: 2px solid var(--primary-green);
-            border-radius: 50%;
-            cursor: pointer;
-        }
-
-        #floatingPlayer {
-            backdrop-filter: blur(20px);
-            background-color: rgba(255, 255, 255, 0.98);
-            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            border-top: 1px solid rgba(16, 185, 129, 0.1);
-        }
-
+        .ui-box { background-color: var(--primary-green) !important; border-radius: 1.2rem; color: #000000 !important; }
+        input[type="range"] { -webkit-appearance: none; width: 100%; height: 6px; background: rgba(16, 185, 129, 0.2); border-radius: 10px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: #000; border: 2px solid var(--primary-green); border-radius: 50%; cursor: pointer; }
+        #floatingPlayer { backdrop-filter: blur(20px); background-color: rgba(255, 255, 255, 0.98); box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); border-top: 1px solid rgba(16, 185, 129, 0.1); }
         #floatingPlayer.minimized { transform: translate(-50%, 120%); opacity: 0; pointer-events: none; }
-
-        .restore-btn {
-            position: fixed; bottom: 20px; left: 20px; width: 55px; height: 55px;
-            background-color: var(--primary-green); color: black; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); z-index: 100; cursor: pointer;
-            transform: scale(0); transition: 0.3s;
-        }
+        
+        .restore-btn, .contact-trigger { position: fixed; bottom: 20px; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(0,0,0,0.15); z-index: 100; cursor: pointer; transition: 0.3s; }
+        .restore-btn { left: 20px; background-color: var(--primary-green); color: black; transform: scale(0); }
         .restore-btn.show { transform: scale(1); }
+        .contact-trigger { right: 20px; background-color: #1e293b; color: white; border: 2px solid var(--primary-green); }
+        .contact-trigger:hover { transform: translateY(-5px); }
+        
+        .contact-input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); margin-bottom: 12px; font-size: 14px; outline: none; }
+        .contact-input:focus { border-color: var(--primary-green); }
 
         .nav-control-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; transition: 0.2s; color: #1a1a1a; }
-        .nav-control-btn span { font-size: 9px; font-weight: 800; opacity: 0.8; }
-
-        .skip-control-btn { display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.04); padding: 4px 10px; border-radius: 10px; }
-        .skip-label { font-size: 9px; font-weight: 900; }
-
         .ayah-flow { line-height: 2.8; text-align: justify; font-size: 1.8rem; padding-bottom: 40px; }
         .basmala-box { font-size: 2.2rem; color: var(--primary-green); text-align: center; margin-bottom: 1.5rem; padding: 1rem; border-bottom: 1px solid rgba(16, 185, 129, 0.2); }
-
         .speed-btn { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; background: rgba(0,0,0,0.04); }
         .speed-btn.active { background: black; color: white; }
-
-        /* تحسينات مستطيل القص */
-        .cut-zone {
-            background: rgba(16, 185, 129, 0.08);
-            border-radius: 1rem;
-            padding: 0.75rem;
-            border: 1px dashed rgba(16, 185, 129, 0.3);
-        }
-        .time-input {
-            border: 1px solid rgba(0,0,0,0.1);
-            transition: all 0.2s;
-            font-family: monospace;
-            font-weight: bold;
-        }
-        .time-input:focus {
-            border-color: var(--primary-green);
-            background: white;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-        }
-
-        .label-tiny {
-            font-size: 8px;
-            font-weight: 800;
-            opacity: 0.6;
-            margin-top: 1px;
-            display: block;
-            text-align: center;
-        }
-
-        @media (max-width: 640px) {
-            .ayah-flow { font-size: 1.5rem; line-height: 2.5; }
-            #floatingPlayer { padding: 1rem !important; border-radius: 1.5rem 1.5rem 0 0 !important; bottom: 0 !important; width: 100% !important; }
-            .dynamic-phrase { font-size: 10px !important; }
-            .capture-section { flex-direction: column; gap: 0.75rem !important; }
-            .time-unit-box { justify-content: center; width: 100%; }
-        }
-
+        .cut-zone { background: rgba(16, 185, 129, 0.08); border-radius: 1rem; padding: 0.75rem; border: 1px dashed rgba(16, 185, 129, 0.3); }
+        .time-input { border: 1px solid rgba(0,0,0,0.1); transition: all 0.2s; font-family: monospace; font-weight: bold; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--primary-green); border-radius: 10px; }
     </style>
 </head>
-<body class="antialiased">
 
-    <!-- شريط التنقل العلوي -->
+<body class="antialiased">
     <nav class="sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <div class="w-8 h-8 md:w-9 md:h-9 bg-emerald-600 text-white rounded-lg flex items-center justify-center shadow-md">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/></svg>
                 </div>
                 <span class="text-base md:text-lg font-black tracking-tight">نور القرآن</span>
             </div>
-            <div id="dynamicPhrase" class="dynamic-phrase text-[11px] md:text-sm font-bold text-emerald-600 opacity-80 animate-pulse">جارِ التحميل...</div>
+            <div class="dynamic-phrase text-[11px] md:text-sm font-bold text-emerald-600 opacity-80 animate-pulse" id="dynamicPhrase">جارِ التحميل...</div>
         </div>
     </nav>
 
     <header class="max-w-4xl mx-auto px-6 pt-8 pb-4 text-center">
-        <p class="text-emerald-600 font-bold mb-2 quran-font text-lg md:text-xl">
-            ( وَلَقَد يَسَّرنَا القُرآنَ لِلذِّكرِ فَهَل مِن مُدَّكِرٍ )
-        </p>
+        <p class="text-emerald-600 font-bold mb-2 quran-font text-lg md:text-xl">( وَلَقَد يَسَّرنَا القُرآنَ لِلذِّكرِ فَهَل مِن مُدَّكِرٍ )</p>
         <h2 class="text-2xl md:text-4xl font-black mb-4 quran-font">اختر قارئك المفضل</h2>
-        <input type="text" id="searchInput" oninput="filterReciters()" 
-               class="w-full max-w-lg px-5 py-3 rounded-xl bg-white outline-none text-center text-base border-2 border-emerald-50 focus:border-emerald-500 transition-all shadow-sm" 
-               placeholder="ابحث عن اسم القارئ...">
+        <input class="w-full max-w-lg px-5 py-3 rounded-xl bg-white outline-none text-center text-base border-2 border-emerald-50 focus:border-emerald-500 transition-all shadow-sm" id="searchInput" oninput="filterReciters()" placeholder="ابحث عن اسم القارئ..." type="text"/>
     </header>
 
-    <main id="reciterGrid" class="max-w-7xl mx-auto px-4 py-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 pb-72"></main>
+    <main class="max-w-7xl mx-auto px-4 py-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 pb-72" id="reciterGrid"></main>
 
-    <div id="restoreBtn" class="restore-btn" onclick="togglePlayerMinimize()">
-        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z"></path></svg>
+    <div class="restore-btn" id="restoreBtn" onclick="togglePlayerMinimize()">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/></svg>
     </div>
 
-    <!-- المشغل العائم -->
-    <div id="floatingPlayer" class="fixed bottom-0 md:bottom-4 left-1/2 -translate-x-1/2 w-full md:w-[95%] max-w-5xl md:rounded-[2.5rem] p-4 md:p-6 z-[60] hidden">
-        <div id="playerContent" class="flex flex-col gap-4">
-            
-            <!-- الجزء العلوي: معلومات السورة والتحكم -->
+    <div class="contact-trigger" onclick="toggleContactModal()" title="اتصل بنا">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+    </div>
+
+    <div class="fixed bottom-0 md:bottom-4 left-1/2 -translate-x-1/2 w-full md:w-[95%] max-w-5xl md:rounded-[2.5rem] p-4 md:p-6 z-[60] hidden" id="floatingPlayer">
+        <div class="flex flex-col gap-4" id="playerContent">
             <div class="flex flex-col md:flex-row items-center justify-between gap-3">
-                <div onclick="reopenSurahModal()" class="ui-box flex items-center gap-3 w-full md:w-72 p-2 cursor-pointer active:scale-95 transition-transform">
-                    <div id="pSurahNum" class="w-10 h-10 bg-black/10 rounded-lg flex items-center justify-center font-black text-base shrink-0">1</div>
+                <div class="ui-box flex items-center gap-3 w-full md:w-72 p-2 cursor-pointer active:scale-95 transition-transform" onclick="reopenSurahModal()">
+                    <div class="w-10 h-10 bg-black/10 rounded-lg flex items-center justify-center font-black text-base shrink-0" id="pSurahNum">1</div>
                     <div class="text-right flex-1 overflow-hidden leading-tight">
-                        <h4 id="pSurahName" class="font-bold text-sm truncate">سورة الفاتحة</h4>
-                        <p id="pReciterName" class="text-[10px] font-medium opacity-80 truncate"></p>
+                        <h4 class="font-bold text-sm truncate" id="pSurahName">سورة الفاتحة</h4>
+                        <p class="text-[10px] font-medium opacity-80 truncate" id="pReciterName"></p>
                     </div>
                 </div>
-
                 <div class="flex items-center gap-6">
-                    <button onclick="navigateSurah('prev')" class="nav-control-btn" title="السورة السابقة">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-                        <span>السابقة</span>
+                    <button class="nav-control-btn" onclick="navigateSurah('prev')" title="السورة السابقة"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg><span>السابقة</span></button>
+                    <button class="w-14 h-14 bg-black text-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all" id="mainPlayBtn" onclick="togglePlay()">
+                        <svg class="w-7 h-7" fill="currentColor" id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <svg class="w-7 h-7 hidden" fill="currentColor" id="pauseIcon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                     </button>
-                    <button id="mainPlayBtn" onclick="togglePlay()" class="w-14 h-14 bg-black text-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all">
-                        <svg id="playIcon" class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                        <svg id="pauseIcon" class="w-7 h-7 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                    </button>
-                    <button onclick="navigateSurah('next')" class="nav-control-btn" title="السورة التالية">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-                        <span>التالية</span>
-                    </button>
+                    <button class="nav-control-btn" onclick="navigateSurah('next')" title="السورة التالية"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg><span>التالية</span></button>
                 </div>
-
                 <div class="flex gap-2 w-full md:w-auto">
-                    <button onclick="showSurahText()" class="ui-box px-4 py-2 font-black text-xs flex-1">نص السورة</button>
-                    <button onclick="togglePlayerMinimize()" class="ui-box w-10 h-10 flex items-center justify-center">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
-                    </button>
+                    <button class="ui-box px-4 py-2 font-black text-xs flex-1" onclick="showSurahText()">نص السورة</button>
+                    <button class="ui-box w-10 h-10 flex items-center justify-center" onclick="togglePlayerMinimize()"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/></svg></button>
                 </div>
             </div>
-
-            <!-- شريط التقدم -->
             <div class="space-y-1">
-                <input type="range" id="seekBar" value="0" step="0.1" class="cursor-pointer">
+                <input class="cursor-pointer" id="seekBar" step="0.1" type="range" value="0"/>
                 <div class="flex justify-between text-[10px] font-bold opacity-60 px-1">
                     <span id="currentTime">00:00</span>
                     <span id="durationTime">00:00</span>
                 </div>
             </div>
-
-            <!-- سرعة التشغيل والقفز الزمني -->
             <div class="flex flex-wrap items-center justify-between gap-3">
                  <div class="flex items-center gap-2 bg-black/5 dark:bg-white/5 p-1 rounded-xl">
-                    <div class="flex flex-col items-center">
-                        <button onclick="skipTime(-1)" class="p-2 hover:bg-black/5 rounded-lg transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.334 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z"/></svg>
-                        </button>
-                        <span class="label-tiny">للخلف</span>
-                    </div>
-                    <select id="jumpAmount" class="text-[10px] font-black bg-transparent outline-none cursor-pointer px-1">
+                    <button class="p-2 hover:bg-black/5 rounded-lg transition-colors" onclick="skipTime(-1)"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.334 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z"/></svg></button>
+                    <select class="text-[10px] font-black bg-transparent outline-none cursor-pointer px-1" id="jumpAmount">
                         <option value="5">5ث</option>
-                        <option value="10" selected>10ث</option>
+                        <option selected='selected' value="10">10ث</option>
                         <option value="30">30ث</option>
                         <option value="60">1د</option>
                     </select>
-                    <div class="flex flex-col items-center">
-                        <button onclick="skipTime(1)" class="p-2 hover:bg-black/5 rounded-lg transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M11.934 12.8a1 1 0 000-1.6l-5.334-4A1 1 0 005 8v8a1 1 0 001.6.8l5.334-4zM19.934 12.8a1 1 0 000-1.6l-5.334-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.334-4z"/></svg>
-                        </button>
-                        <span class="label-tiny">للأمام</span>
-                    </div>
+                    <button class="p-2 hover:bg-black/5 rounded-lg transition-colors" onclick="skipTime(1)"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M11.934 12.8a1 1 0 000-1.6l-5.334-4A1 1 0 005 8v8a1 1 0 001.6.8l5.334-4zM19.934 12.8a1 1 0 000-1.6l-5.334-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.334-4z"/></svg></button>
                 </div>
-                
                 <div class="flex gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-xl">
-                    <button onclick="setSpeed(1, this)" class="speed-btn active">1x</button>
-                    <button onclick="setSpeed(1.5, this)" class="speed-btn">1.5x</button>
-                    <button onclick="setSpeed(2, this)" class="speed-btn">2x</button>
+                    <button class="speed-btn active" onclick="setSpeed(1, this)">1x</button>
+                    <button class="speed-btn" onclick="setSpeed(1.5, this)">1.5x</button>
+                    <button class="speed-btn" onclick="setSpeed(2, this)">2x</button>
                 </div>
             </div>
-
-            <!-- قسم القص المطور (المستطيل المتناسق) -->
             <div class="cut-zone mt-1">
                 <div class="flex flex-col md:flex-row items-stretch md:items-center gap-4">
-                    <!-- مدخلات الوقت -->
                     <div class="flex flex-1 items-center justify-around md:justify-start gap-4 capture-section">
-                        <!-- من -->
                         <div class="flex items-center gap-2 time-unit-box">
                             <span class="font-black text-[10px] text-emerald-700 dark:text-emerald-400">من:</span>
                             <div class="flex items-center gap-1">
-                                <div class="flex flex-col">
-                                    <input type="number" id="startM" placeholder="00" class="time-input w-11 h-9 rounded-lg text-center text-xs dark:bg-slate-800">
-                                    <span class="label-tiny">دقيقة</span>
-                                </div>
-                                <span class="font-bold opacity-40 text-xs mt-[-10px]">:</span>
-                                <div class="flex flex-col">
-                                    <input type="number" id="startS" placeholder="00" class="time-input w-11 h-9 rounded-lg text-center text-xs dark:bg-slate-800">
-                                    <span class="label-tiny">ثانية</span>
-                                </div>
+                                <input class="time-input w-11 h-9 rounded-lg text-center text-xs dark:bg-slate-800" id="startM" placeholder="00" type="number"/>
+                                <span class="font-bold opacity-40 text-xs">:</span>
+                                <input class="time-input w-11 h-9 rounded-lg text-center text-xs dark:bg-slate-800" id="startS" placeholder="00" type="number"/>
                             </div>
-                            <button onclick="captureTime('start')" class="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 p-2 rounded-lg hover:bg-emerald-500/30 transition-colors mb-4" title="تثبيت الوقت الحالي">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-                            </button>
+                            <button class="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 p-2 rounded-lg" onclick="captureTime('start')"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/></svg></button>
                         </div>
-
-                        <div class="hidden md:block w-px h-6 bg-emerald-500/20"></div>
-
-                        <!-- إلى -->
                         <div class="flex items-center gap-2 time-unit-box">
                             <span class="font-black text-[10px] text-red-600 dark:text-red-400">إلى:</span>
                             <div class="flex items-center gap-1">
-                                <div class="flex flex-col">
-                                    <input type="number" id="endM" placeholder="00" class="time-input w-11 h-9 rounded-lg text-center text-xs dark:bg-slate-800">
-                                    <span class="label-tiny">دقيقة</span>
-                                </div>
-                                <span class="font-bold opacity-40 text-xs mt-[-10px]">:</span>
-                                <div class="flex flex-col">
-                                    <input type="number" id="endS" placeholder="00" class="time-input w-11 h-9 rounded-lg text-center text-xs dark:bg-slate-800">
-                                    <span class="label-tiny">ثانية</span>
-                                </div>
+                                <input class="time-input w-11 h-9 rounded-lg text-center text-xs dark:bg-slate-800" id="endM" placeholder="00" type="number"/>
+                                <span class="font-bold opacity-40 text-xs">:</span>
+                                <input class="time-input w-11 h-9 rounded-lg text-center text-xs dark:bg-slate-800" id="endS" placeholder="00" type="number"/>
                             </div>
-                            <button onclick="captureTime('end')" class="bg-red-500/10 text-red-600 dark:text-red-400 p-2 rounded-lg hover:bg-red-500/20 transition-colors mb-4" title="تثبيت الوقت الحالي">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-                            </button>
+                            <button class="bg-red-500/10 text-red-600 dark:text-red-400 p-2 rounded-lg" onclick="captureTime('end')"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/></svg></button>
                         </div>
                     </div>
-
-                    <!-- أزرار الأكشن -->
                     <div class="flex gap-2">
-                        <button onclick="processClip()" class="flex-1 md:w-32 h-10 bg-slate-900 text-white rounded-xl font-black text-[11px] hover:bg-black transition-all shadow-sm">قص المقطع</button>
-                        <button onclick="downloadFull()" class="flex-1 md:w-32 h-10 border-2 border-emerald-600 text-emerald-600 dark:text-emerald-400 rounded-xl font-black text-[11px] hover:bg-emerald-50 transition-all">تحميل كامل</button>
+                        <button class="flex-1 md:w-32 h-10 bg-slate-900 text-white rounded-xl font-black text-[11px]" onclick="processClip()">قص المقطع</button>
+                        <button class="flex-1 md:w-32 h-10 border-2 border-emerald-600 text-emerald-600 rounded-xl font-black text-[11px]" onclick="downloadFull()">تحميل كامل</button>
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 
-    <audio id="audioElement" class="hidden"></audio>
+    <div class="fixed inset-0 z-[120] hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" id="contactModal">
+        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-black text-lg">تواصل معنا</h3>
+                <button class="text-2xl" onclick="toggleContactModal()">&times;</button>
+            </div>
+            <form id="contactForm" onsubmit="sendEmail(event)">
+                <label class="block text-xs font-bold mb-2 opacity-60">نوع الرسالة</label>
+                <select class="contact-input appearance-none bg-gray-50 dark:bg-slate-800" id="msgType" required="required">
+                    <option value="ابلاغ عن مشكلة">إبلاغ عن مشكلة</option>
+                    <option value="اقتراح">اقتراح</option>
+                    <option value="اضافة قارئ">إضافة قارئ</option>
+                </select>
+                <label class="block text-xs font-bold mb-2 opacity-60">الاسم</label>
+                <input class="contact-input" id="userName" placeholder="اسمك الكريم" required="required" type="text"/>
+                <label class="block text-xs font-bold mb-2 opacity-60">بريدك الإلكتروني</label>
+                <input class="contact-input" id="userEmail" placeholder="example@mail.com" required="required" type="email"/>
+                <label class="block text-xs font-bold mb-2 opacity-60">نص الرسالة</label>
+                <textarea class="contact-input h-32 resize-none" id="userMessage" placeholder="اكتب استفسارك هنا..." required="required"></textarea>
+                <button class="w-full py-4 bg-emerald-600 text-white rounded-xl font-black hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/20" type="submit">إرسال الرسالة</button>
+            </form>
+        </div>
+    </div>
 
-    <!-- المودالات والأدراج -->
-    <div id="surahModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <audio class="hidden" id="audioElement"></audio>
+
+    <div class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" id="surahModal">
         <div class="bg-white w-full max-w-2xl h-[80vh] rounded-[2rem] shadow-2xl flex flex-col overflow-hidden">
             <div class="p-4 border-b flex flex-col gap-3 bg-gray-50 dark:bg-slate-900/50">
                 <div class="flex justify-between items-center">
-                    <h3 id="modalName" class="font-black text-emerald-900 dark:text-emerald-400">سور القارئ</h3>
-                    <button onclick="closeModal()" class="w-8 h-8 bg-gray-200 dark:bg-slate-700 rounded-full text-lg hover:bg-red-500 hover:text-white transition-colors">&times;</button>
+                    <h3 class="font-black text-emerald-900 dark:text-emerald-400" id="modalName">سور القارئ</h3>
+                    <button class="w-8 h-8 bg-gray-200 dark:bg-slate-700 rounded-full text-lg hover:bg-red-500 hover:text-white transition-colors" onclick="closeModal()">&times;</button>
                 </div>
-                <input type="text" id="surahSearchInput" oninput="filterSurahs()" class="w-full px-4 py-2 rounded-lg bg-white border border-gray-200 outline-none text-sm" placeholder="ابحث عن السورة...">
+                <input class="w-full px-4 py-2 rounded-lg bg-white border border-gray-200 outline-none text-sm" id="surahSearchInput" oninput="filterSurahs()" placeholder="ابحث عن السورة..." type="text"/>
             </div>
-            <div id="surahGrid" class="flex-1 overflow-y-auto p-4 grid grid-cols-2 sm:grid-cols-3 gap-2 custom-scrollbar"></div>
+            <div class="flex-1 overflow-y-auto p-4 grid grid-cols-2 sm:grid-cols-3 gap-2 custom-scrollbar" id="surahGrid"></div>
         </div>
     </div>
 
-    <div id="textDrawer" class="fixed top-0 right-0 h-full w-full md:w-[450px] bg-white shadow-2xl translate-x-full transition-transform duration-500 z-[75] flex flex-col">
+    <div class="fixed top-0 right-0 h-full w-full md:w-[450px] bg-white shadow-2xl translate-x-full transition-transform duration-500 z-[75] flex flex-col" id="textDrawer">
         <div class="p-5 border-b flex justify-between items-center bg-emerald-600 text-white">
-            <h3 id="drawerTitle" class="text-lg font-black quran-font">نص السورة</h3>
-            <button onclick="closeDrawer()" class="text-xl">&times;</button>
+            <h3 class="text-lg font-black quran-font" id="drawerTitle">نص السورة</h3>
+            <button class="text-xl" onclick="closeDrawer()">&times;</button>
         </div>
-        <div id="textContent" class="flex-1 overflow-y-auto p-6 quran-font text-right custom-scrollbar dark:text-slate-200"></div>
+        <div class="flex-1 overflow-y-auto p-6 quran-font text-right custom-scrollbar dark:text-slate-200" id="textContent"></div>
     </div>
 
-    <div id="processingLoader" class="fixed inset-0 z-[110] hidden items-center justify-center bg-black/70">
+    <div class="fixed inset-0 z-[130] hidden items-center justify-center bg-black/70" id="processingLoader">
         <div class="bg-white p-6 rounded-2xl text-center">
             <div class="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-            <p id="loaderText" class="font-bold text-xs">جاري العمل...</p>
+            <p class="font-bold text-xs" id="loaderText">جاري العمل...</p>
         </div>
     </div>
 
     <script>
+        (function() { emailjs.init("lfhDgJYhSw13sxJwu"); })();
+
         const API_URL = "https://mp3quran.net/api/v3/reciters?language=ar";
         const QURAN_TEXT_API = "https://api.alquran.cloud/v1/surah";
         const SURAH_NAMES = ["الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس","هود","يوسف","الرعد","إبراهيم","الحجر","النحل","الإسراء","الكهف","مريم","طه","الأنبياء","الحج","المؤمنون","النور","الفرقان","الشعراء","النمل","القصص","العنكبوت","الروم","لقمان","السجدة","الأحزاب","سبأ","فاطر","يس","الصافات","ص","الزمر","غافر","فصلت","الشورى","الزخرف","الدخان","الجاثية","الأحقاف","محمد","الفتح","الحجرات","ق","الذاريات","الطور","النجم","القمر","الرحمن","الواقعة","الحديد","المجادلة","الحشر","الممتحنة","الصف","الجمعة","المنافقون","التغابن","الطلاق","التحريم","الملك","القلم","الحاقة","المعارج","نوح","الجن","المزمل","المدثر","القيامة","الإنسان","المرسلات","النبأ","النازعات","عبس","التكوير","الانفطار","المطففين","الانشقاق","البروج","الطارق","الأعلى","الغاشية","الفجر","البلد","الشمس","الليل","الضحى","الشرح","التين","العلق","القدر","البينة","الزلزلة","العاديات","القارعة","التكاثر","العصر","الهمزة","الفيل","قريش","الماعون","الكوثر","الكافرون","النصر","المسد","الإخلاص","الفلق","الناس"];
-        const PHRASES = ["اللهم صلِّ على سيدنا محمد", "سبحان الله وبحمده سبحان الله العظيم", "لا إله إلا الله وحده لا شريك له"];
+        const PHRASES = ["اللهم صلِّ على سيدنا محمد", "سبحان الله وبحمده سبحان الله العظيم", "لا إله إلا الله وحده لا شريك له"];
 
-        let recitersData = [];
-        let activeReciter = null;
-        let activeIdx = null; 
-        let availableSurahs = [];
-        let currentMoshaf = null;
-        let currentPlaybackRate = 1;
-
-        const audio = document.getElementById('audioElement');
-        const seekBar = document.getElementById('seekBar');
-        const currentTimeEl = document.getElementById('currentTime');
-        const durationTimeEl = document.getElementById('durationTime');
-        const playIcon = document.getElementById('playIcon');
-        const pauseIcon = document.getElementById('pauseIcon');
+        let recitersData = [], activeReciter = null, activeIdx = null, availableSurahs = [], currentMoshaf = null, currentPlaybackRate = 1;
+        const audio = document.getElementById('audioElement'), seekBar = document.getElementById('seekBar'), currentTimeEl = document.getElementById('currentTime'), durationTimeEl = document.getElementById('durationTime'), playIcon = document.getElementById('playIcon'), pauseIcon = document.getElementById('pauseIcon');
 
         async function init() {
-            const randomPhrase = PHRASES[Math.floor(Math.random() * PHRASES.length)];
-            document.getElementById('dynamicPhrase').innerText = randomPhrase;
+            document.getElementById('dynamicPhrase').innerText = PHRASES[Math.floor(Math.random() * PHRASES.length)];
             try {
                 const res = await fetch(API_URL);
                 const data = await res.json();
                 recitersData = data.reciters.sort((a,b) => a.name.localeCompare(b.name, 'ar'));
                 renderReciters(recitersData);
-            } catch(e) { console.error(e); }
+            } catch(e) { console.error("Error loading reciters:", e); }
+        }
+
+        function toggleContactModal() {
+            document.getElementById('contactModal').classList.toggle('hidden');
+        }
+
+        async function sendEmail(e) {
+            e.preventDefault();
+            const loader = document.getElementById('processingLoader');
+            const loaderText = document.getElementById('loaderText');
+            loaderText.innerText = "جاري إرسال رسالتك...";
+            loader.classList.replace('hidden', 'flex');
+            const params = {
+                title: document.getElementById('msgType').value,
+                name: document.getElementById('userName').value,
+                email: document.getElementById('userEmail').value,
+                message: document.getElementById('userMessage').value
+            };
+            try {
+                await emailjs.send("Noralquran8", "template_itvl4tc", params);
+                alert("تم إرسال رسالتك بنجاح، شكراً لتواصلك!");
+                document.getElementById('contactForm').reset();
+                toggleContactModal();
+            } catch (error) {
+                alert("عذراً، حدث خطأ أثناء الإرسال.");
+            } finally {
+                loader.classList.replace('flex', 'hidden');
+            }
         }
 
         function renderReciters(list) {
@@ -366,104 +269,25 @@
             `).join('');
         }
 
-        function filterReciters() {
-            const q = document.getElementById('searchInput').value.toLowerCase();
-            renderReciters(recitersData.filter(r => r.name.toLowerCase().includes(q)));
-        }
-
-        function showSurahs(id) {
-            activeReciter = recitersData.find(r => r.id == id);
-            currentMoshaf = activeReciter.moshaf.find(m => m.name.includes("حفص")) || activeReciter.moshaf[0]; 
-            availableSurahs = currentMoshaf.surah_list.split(',').map(Number);
-            document.getElementById('modalName').innerText = activeReciter.name;
-            renderSurahGrid(availableSurahs);
-            document.getElementById('surahModal').classList.remove('hidden');
-        }
-
-        function renderSurahGrid(surahList) {
-            document.getElementById('surahGrid').innerHTML = surahList.map(s => `
-                <button onclick="playSurah(${s-1})" class="p-2 text-[11px] font-bold rounded-lg transition-all ${activeIdx === (s-1) ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-900 dark:bg-slate-800 dark:text-emerald-400'}">${SURAH_NAMES[s-1]}</button>
-            `).join('');
-        }
-
-        function filterSurahs() {
-            const q = document.getElementById('surahSearchInput').value.trim();
-            const filtered = availableSurahs.filter(sId => SURAH_NAMES[sId - 1].includes(q));
-            renderSurahGrid(filtered);
-        }
-
-        function playSurah(idx) {
-            activeIdx = idx;
-            const surahNumber = (idx + 1).toString().padStart(3, '0');
-            let server = currentMoshaf.server;
-            if (server.startsWith('http:')) server = server.replace('http:', 'https:');
-            if (!server.endsWith('/')) server += '/';
-            
-            audio.src = `${server}${surahNumber}.mp3`;
-            document.getElementById('pSurahName').innerText = `سورة ${SURAH_NAMES[idx]}`;
-            document.getElementById('pReciterName').innerText = activeReciter.name;
-            document.getElementById('pSurahNum').innerText = idx + 1;
-            
-            audio.playbackRate = currentPlaybackRate;
-            audio.play();
-            updatePlayUI(true);
-            document.getElementById('floatingPlayer').classList.remove('hidden', 'minimized');
-            document.getElementById('restoreBtn').classList.remove('show');
-            closeModal();
-            fetchSurahText(idx + 1);
-        }
-
-        function togglePlay() {
-            if (audio.paused) { audio.play(); updatePlayUI(true); } 
-            else { audio.pause(); updatePlayUI(false); }
-        }
-
-        function setSpeed(rate, btn) {
-            currentPlaybackRate = rate;
-            audio.playbackRate = rate;
-            document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        }
-
-        function skipTime(direction) {
-            const amount = parseInt(document.getElementById('jumpAmount').value);
-            audio.currentTime = Math.max(0, Math.min(audio.currentTime + (direction * amount), audio.duration));
-        }
-
-        function updatePlayUI(isPlaying) {
-            if (isPlaying) { playIcon.classList.add('hidden'); pauseIcon.classList.remove('hidden'); } 
-            else { playIcon.classList.remove('hidden'); pauseIcon.classList.add('hidden'); }
-        }
-
-        audio.addEventListener('timeupdate', () => {
-            if (!isNaN(audio.duration)) {
-                seekBar.value = (audio.currentTime / audio.duration) * 100;
-                currentTimeEl.innerText = formatTime(audio.currentTime);
-                durationTimeEl.innerText = formatTime(audio.duration);
-            }
-        });
-
+        function filterReciters() { const q = document.getElementById('searchInput').value.toLowerCase(); renderReciters(recitersData.filter(r => r.name.toLowerCase().includes(q))); }
+        function showSurahs(id) { activeReciter = recitersData.find(r => r.id == id); currentMoshaf = activeReciter.moshaf.find(m => m.name.includes("حفص")) || activeReciter.moshaf[0]; availableSurahs = currentMoshaf.surah_list.split(',').map(Number); document.getElementById('modalName').innerText = activeReciter.name; renderSurahGrid(availableSurahs); document.getElementById('surahModal').classList.remove('hidden'); }
+        function renderSurahGrid(surahList) { document.getElementById('surahGrid').innerHTML = surahList.map(s => `<button onclick="playSurah(${s-1})" class="p-2 text-[11px] font-bold rounded-lg transition-all ${activeIdx === (s-1) ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-900 dark:bg-slate-800 dark:text-emerald-400'}">${SURAH_NAMES[s-1]}</button>`).join(''); }
+        function filterSurahs() { const q = document.getElementById('surahSearchInput').value.trim(); const filtered = availableSurahs.filter(sId => SURAH_NAMES[sId - 1].includes(q)); renderSurahGrid(filtered); }
+        function playSurah(idx) { activeIdx = idx; const surahNumber = (idx + 1).toString().padStart(3, '0'); let server = currentMoshaf.server; if (server.startsWith('http:')) server = server.replace('http:', 'https:'); if (!server.endsWith('/')) server += '/'; audio.src = `${server}${surahNumber}.mp3`; document.getElementById('pSurahName').innerText = `سورة ${SURAH_NAMES[idx]}`; document.getElementById('pReciterName').innerText = activeReciter.name; document.getElementById('pSurahNum').innerText = idx + 1; audio.playbackRate = currentPlaybackRate; audio.play().catch(e => console.log("Autoplay blocked")); updatePlayUI(true); document.getElementById('floatingPlayer').classList.remove('hidden', 'minimized'); document.getElementById('restoreBtn').classList.remove('show'); closeModal(); fetchSurahText(idx + 1); }
+        function togglePlay() { audio.paused ? (audio.play(), updatePlayUI(true)) : (audio.pause(), updatePlayUI(false)); }
+        function setSpeed(rate, btn) { currentPlaybackRate = rate; audio.playbackRate = rate; document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
+        function skipTime(direction) { const amount = parseInt(document.getElementById('jumpAmount').value); audio.currentTime = Math.max(0, Math.min(audio.currentTime + (direction * amount), audio.duration)); }
+        function updatePlayUI(isPlaying) { isPlaying ? (playIcon.classList.add('hidden'), pauseIcon.classList.remove('hidden')) : (playIcon.classList.remove('hidden'), pauseIcon.classList.add('hidden')); }
+        audio.addEventListener('timeupdate', () => { if (!isNaN(audio.duration)) { seekBar.value = (audio.currentTime / audio.duration) * 100; currentTimeEl.innerText = formatTime(audio.currentTime); durationTimeEl.innerText = formatTime(audio.duration); } });
         seekBar.addEventListener('input', () => { audio.currentTime = (seekBar.value / 100) * audio.duration; });
-
-        function formatTime(seconds) {
-            const m = Math.floor(seconds / 60);
-            const s = Math.floor(seconds % 60);
-            return m.toString().padStart(2, '0') + ":" + s.toString().padStart(2, '0');
-        }
-
-        function togglePlayerMinimize() {
-            const player = document.getElementById('floatingPlayer');
-            player.classList.toggle('minimized');
-            document.getElementById('restoreBtn').classList.toggle('show', player.classList.contains('minimized'));
-        }
-
+        function formatTime(s) { const min = Math.floor(s/60), sec = Math.floor(s%60); return min.toString().padStart(2,'0')+":"+sec.toString().padStart(2,'0'); }
+        function togglePlayerMinimize() { const p = document.getElementById('floatingPlayer'); p.classList.toggle('minimized'); document.getElementById('restoreBtn').classList.toggle('show', p.classList.contains('minimized')); }
+        function closeModal() { document.getElementById('surahModal').classList.add('hidden'); }
+        function closeDrawer() { document.getElementById('textDrawer').classList.add('translate-x-full'); }
+        function showSurahText() { document.getElementById('textDrawer').classList.remove('translate-x-full'); }
         function reopenSurahModal() { if(activeReciter) showSurahs(activeReciter.id); }
-
-        function navigateSurah(dir) {
-            const currentPos = availableSurahs.indexOf(activeIdx + 1);
-            let nextPos = (dir === 'next') ? (currentPos + 1) % availableSurahs.length : (currentPos - 1 + availableSurahs.length) % availableSurahs.length;
-            playSurah(availableSurahs[nextPos] - 1);
-        }
+        function captureTime(t) { const cur = Math.floor(audio.currentTime); if(isNaN(cur)) return; document.getElementById(t+'M').value = Math.floor(cur/60); document.getElementById(t+'S').value = cur%60; }
+        function navigateSurah(dir) { const currentPos = availableSurahs.indexOf(activeIdx + 1); let nextPos = (dir === 'next') ? (currentPos + 1) % availableSurahs.length : (currentPos - 1 + availableSurahs.length) % availableSurahs.length; playSurah(availableSurahs[nextPos] - 1); }
 
         async function fetchSurahText(id) {
             const content = document.getElementById('textContent');
@@ -472,82 +296,35 @@
             try {
                 const res = await fetch(`${QURAN_TEXT_API}/${id}/quran-simple`);
                 const data = await res.json();
+                
+                // Add Basmala box manually at the top if not At-Tawbah (9)
                 let html = (id !== 9) ? `<div class="basmala-box">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>` : "";
                 html += `<div class="ayah-flow">`;
+                
                 data.data.ayahs.forEach((a, idx) => {
                     let text = a.text;
+                    
+                    // Filter Logic: Remove Basmala from first ayah IF not Al-Fatiha (1) and not At-Tawbah (9)
                     if (idx === 0 && id !== 1 && id !== 9) {
+                        // Regular expression to catch "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ" with variations in diacritics
+                        // This handles the common API output where the basmala is prefixed to the first verse
                         const basmalaRegex = /^بِسْمِ\s+اللَّهِ\s+الرَّحْمَٰنِ\s+الرَّحِيمِ\s*/;
-                        text = text.replace(basmalaRegex, "");
+                        const basmalaRegexSimple = /^بِسْمِ\s+اللَّهِ\s+الرَّحْمَنِ\s+الرَّحِيمِ\s*/;
+                        
+                        text = text.replace(basmalaRegex, "").replace(basmalaRegexSimple, "").trim();
                     }
+                    
                     html += `${text} <span class="text-emerald-600 font-bold mx-1 opacity-40 text-sm">﴿${a.numberInSurah}﴾</span> `;
                 });
                 content.innerHTML = html + `</div>`;
-            } catch(e) { content.innerHTML = "خطأ في تحميل النص"; }
-        }
-
-        function captureTime(type) {
-            const cur = Math.floor(audio.currentTime);
-            document.getElementById(type + 'M').value = Math.floor(cur / 60);
-            document.getElementById(type + 'S').value = cur % 60;
-        }
-
-        async function downloadFull() {
-            if(activeIdx === null) return;
-            document.getElementById('loaderText').innerText = "جاري التحميل...";
-            document.getElementById('processingLoader').classList.replace('hidden', 'flex');
-            try {
-                const res = await fetch(audio.src);
-                const blob = await res.blob();
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = `${SURAH_NAMES[activeIdx]}_${activeReciter.name}.mp3`;
-                link.click();
-            } finally { document.getElementById('processingLoader').classList.replace('flex', 'hidden'); }
-        }
-
-        async function processClip() {
-            const startM = parseInt(document.getElementById('startM').value || 0);
-            const startS = parseInt(document.getElementById('startS').value || 0);
-            const endM = parseInt(document.getElementById('endM').value || 0);
-            const endS = parseInt(document.getElementById('endS').value || 0);
-            const st = (startM * 60) + startS;
-            const et = (endM * 60) + endS;
-            if (et <= st || activeIdx === null) return;
-            document.getElementById('loaderText').innerText = "جاري قص المقطع في ثوانٍ...";
-            document.getElementById('processingLoader').classList.replace('hidden', 'flex');
-            try {
-                const headResponse = await fetch(audio.src, { method: 'HEAD' });
-                const totalSizeBytes = parseInt(headResponse.headers.get('content-length'));
-                const duration = audio.duration;
-                if (!totalSizeBytes || isNaN(duration)) throw new Error("File info not accessible");
-                const bytePerSecond = totalSizeBytes / duration;
-                const rangeStart = Math.floor(st * bytePerSecond);
-                const rangeEnd = Math.floor(et * bytePerSecond);
-                const rangeResponse = await fetch(audio.src, { headers: { 'Range': `bytes=${rangeStart}-${rangeEnd}` } });
-                if (!rangeResponse.ok && rangeResponse.status !== 206) throw new Error("Range not supported");
-                const clippedBlob = await rangeResponse.blob();
-                const downloadUrl = URL.createObjectURL(new Blob([clippedBlob], { type: 'audio/mpeg' }));
-                const link = document.createElement('a');
-                link.href = downloadUrl;
-                link.download = `مقطع_${SURAH_NAMES[activeIdx]}_${activeReciter.name}.mp3`;
-                link.click();
             } catch(e) {
-                const response = await fetch(audio.src);
-                const fullBlob = await response.blob();
-                const bytePerSecond = fullBlob.size / audio.duration;
-                const clipped = fullBlob.slice(st * bytePerSecond, et * bytePerSecond, 'audio/mpeg');
-                const url = URL.createObjectURL(clipped);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `مقطع_${SURAH_NAMES[activeIdx]}_${activeReciter.name}.mp3`;
-                link.click();
-            } finally { document.getElementById('processingLoader').classList.replace('flex', 'hidden'); }
+                content.innerHTML = "خطأ في تحميل النص";
+            }
         }
 
-        function showSurahText() { document.getElementById('textDrawer').style.transform = "translateX(0)"; }
-        function closeDrawer() { document.getElementById('textDrawer').style.transform = "translateX(100%)"; }
-        function closeModal() { document.getElementById('surahModal').classList.add('hidden'); }
+        async function downloadFull() { if(activeIdx === null) return; document.getElementById('loaderText').innerText = "جاري التحميل..."; document.getElementById('processingLoader').classList.replace('hidden', 'flex'); try { const res = await fetch(audio.src); const blob = await res.blob(); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `${SURAH_NAMES[activeIdx]}_${activeReciter.name}.mp3`; link.click(); } catch(e) { alert("حدث خطأ أثناء التحميل"); } finally { document.getElementById('processingLoader').classList.replace('flex', 'hidden'); } }
+        async function processClip() { const startM = parseInt(document.getElementById('startM').value || 0), startS = parseInt(document.getElementById('startS').value || 0); const endM = parseInt(document.getElementById('endM').value || 0), endS = parseInt(document.getElementById('endS').value || 0); const st = (startM * 60) + startS, et = (endM * 60) + endS; if (et <= st || activeIdx === null) { alert("تأكد من ضبط الوقت بشكل صحيح"); return; } document.getElementById('loaderText').innerText = "جاري معالجة المقطع..."; document.getElementById('processingLoader').classList.replace('hidden', 'flex'); try { const headRes = await fetch(audio.src, { method: 'HEAD' }); const totalBytes = parseInt(headRes.headers.get('content-length')); const duration = audio.duration; if (!totalBytes || isNaN(duration)) throw new Error("Info fail"); const bpc = totalBytes / duration; const rangeRes = await fetch(audio.src, { headers: { 'Range': `bytes=${Math.floor(st*bpc)}-${Math.floor(et*bpc)}` } }); const blob = await rangeRes.blob(); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `clip_${SURAH_NAMES[activeIdx]}.mp3`; link.click(); } catch(e) { alert("المتصفح لا يدعم قص هذا الملف مباشرة"); } finally { document.getElementById('processingLoader').classList.replace('flex', 'hidden'); } }
+
         window.onload = init;
     </script>
 </body>
